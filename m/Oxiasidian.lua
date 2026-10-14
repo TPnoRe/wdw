@@ -2064,7 +2064,9 @@ function Library:CreateWindow(...)
 				Menu.AddCheckbox, Menu.CreateCheckbox = Menu.addCheckbox, Menu.addCheckbox
 				Menu.addCheckBox = Menu.addCheckbox
 
-				-- ---- Button (S+ .mecha-btn 34px gradient + chamfer) ----
+				-- ---- Button (S+ .mecha-btn 36px gradient + chamfer) ----
+				-- หมายเหตุ: ข้อความปุ่มใช้ TextLabel ลูกแทน TextButton.Text โดยตรง
+				-- เพราะบาง client เรนเดอร์สี TextButton.Text เพี้ยน (เข้มจนอ่านไม่ออก)
 				Menu.addButton = function(...)
 					local a = Pack(Menu, ...)
 					local label, cb, locked, desc = toStr(a[1] or "Button"), nil, false, nil
@@ -2075,17 +2077,20 @@ function Library:CreateWindow(...)
 						elseif isStr(v) and desc == nil and v:find(" ") then desc = v end
 					end
 					local b = New("TextButton", { Size = UDim2.new(1, 0, 0, 36),
-						BackgroundColor3 = Window._theme.Surface2, Text = label,
-						Font = Enum.Font.GothamBlack, TextSize = 13,
-						TextColor3 = locked and Window._theme.TextDim or Color3.fromRGB(255, 255, 255),
-						TextTruncate = Enum.TextTruncate.AtEnd,
+						BackgroundColor3 = Window._theme.Surface2, Text = "",
+						AutoButtonColor = false,
 						LayoutOrder = NextOrder() }, box)
 					MechaCorner(b)
 					local bs2 = Stroke(b, Window._theme.Accent, 1.5)
 					local grad = MechaGradient(b, Window._theme.Accent, Window._theme.Accent2 or Window._theme.Accent)
+					local bl = New("TextLabel", { Size = UDim2.new(1, 0, 1, 0),
+						BackgroundTransparency = 1, Text = label,
+						Font = Enum.Font.GothamBlack, TextSize = 13,
+						TextColor3 = locked and Window._theme.TextDim or Color3.fromRGB(255, 255, 255),
+						TextTruncate = Enum.TextTruncate.AtEnd }, b)
 					OnTheme(function(t)
 						b.BackgroundColor3 = t.Surface2
-						b.TextColor3 = locked and t.TextDim or Color3.fromRGB(255, 255, 255)
+						bl.TextColor3 = locked and t.TextDim or Color3.fromRGB(255, 255, 255)
 						bs2.Color = t.Accent
 						pcall(function()
 							grad.Color = ColorSequence.new({
@@ -2132,13 +2137,16 @@ function Library:CreateWindow(...)
 						_keywords = NormQuery("buttons grid") }
 					local function MakeBtn(text, cb, locked, parent, w)
 						local b = New("TextButton", { Size = w,
-							BackgroundColor3 = Window._theme.Surface2, Text = toStr(text),
-							Font = Enum.Font.GothamBlack, TextSize = 12,
-							TextColor3 = locked and Window._theme.TextDim or Color3.fromRGB(255, 255, 255),
-							TextTruncate = Enum.TextTruncate.AtEnd }, parent)
+							BackgroundColor3 = Window._theme.Surface2, Text = "",
+							AutoButtonColor = false }, parent)
 						MechaCorner(b)
 						Stroke(b, Window._theme.Accent, 1.5)
 						MechaGradient(b, Window._theme.Accent, Window._theme.Accent2 or Window._theme.Accent)
+						New("TextLabel", { Size = UDim2.new(1, 0, 1, 0),
+							BackgroundTransparency = 1, Text = toStr(text),
+							Font = Enum.Font.GothamBlack, TextSize = 12,
+							TextColor3 = locked and Window._theme.TextDim or Color3.fromRGB(255, 255, 255),
+							TextTruncate = Enum.TextTruncate.AtEnd }, b)
 						Track(comp, b.MouseButton1Click:Connect(function()
 							if locked then return end
 							SFX:Click()
@@ -2560,13 +2568,21 @@ function Library:CreateWindow(...)
 						Visible = (multi and true or false) }, popup)
 					HList(actBar, 4)
 					local allBtn = New("TextButton", { Size = UDim2.new(0.5, -2, 0, 22),
-						BackgroundColor3 = Window._theme.Surface3, Text = "[ALL]",
-						Font = Enum.Font.GothamBlack, TextSize = 10, TextColor3 = Window._theme.TextMuted }, actBar)
+						BackgroundColor3 = Window._theme.Surface3, Text = "",
+						AutoButtonColor = false }, actBar)
 					MechaCorner(allBtn)
 					Stroke(allBtn, Window._theme.Border, 1)
+					New("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+						Text = "[ALL]", Font = Enum.Font.GothamBlack, TextSize = 10,
+						TextColor3 = Window._theme.TextMuted }, allBtn)
 					local clearBtn = New("TextButton", { Size = UDim2.new(0.5, -2, 0, 22),
-						BackgroundColor3 = Window._theme.Surface3, Text = "[CLEAR]",
-						Font = Enum.Font.GothamBlack, TextSize = 10, TextColor3 = Window._theme.TextMuted }, actBar)
+						BackgroundColor3 = Window._theme.Surface3, Text = "",
+						AutoButtonColor = false }, actBar)
+					MechaCorner(clearBtn)
+					Stroke(clearBtn, Window._theme.Border, 1)
+					New("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+						Text = "[CLEAR]", Font = Enum.Font.GothamBlack, TextSize = 10,
+						TextColor3 = Window._theme.TextMuted }, clearBtn)
 					MechaCorner(clearBtn)
 					Stroke(clearBtn, Window._theme.Border, 1)
 					local search = New("TextBox", { Size = UDim2.new(1, 0, 0, 24),
@@ -2990,16 +3006,19 @@ function Library:CreateWindow(...)
 						TextColor3 = Color3.fromRGB(255, 255, 255) }, row)
 					local keyBtn = New("TextButton", { AnchorPoint = Vector2.new(1, 0.5),
 						Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 70, 0, 24),
-						BackgroundColor3 = Window._theme.Surface3, Text = "[" .. toStr(def) .. "]",
-						Font = Enum.Font.Code, TextSize = 10, TextColor3 = Window._theme.Accent }, row)
+						BackgroundColor3 = Window._theme.Surface3, Text = "",
+						AutoButtonColor = false }, row)
 					MechaCorner(keyBtn)
 					Stroke(keyBtn, Window._theme.Accent, 1)
+					local keyLbl = New("TextLabel", { Size = UDim2.new(1, 0, 1, 0),
+						BackgroundTransparency = 1, Text = "[" .. toStr(def) .. "]",
+						Font = Enum.Font.Code, TextSize = 10, TextColor3 = Window._theme.Accent }, keyBtn)
 					local comp = { _window = Window, _row = row, _value = toStr(def), _callback = cb,
 						_saveKey = saveKey, _conns = {}, _binding = false, Type = "Keybind",
 						_keywords = NormQuery(label .. " keybind hotkey") }
 					local function SetKey(name, fire)
 						comp._value = toStr(name)
-						keyBtn.Text = "[" .. comp._value .. "]"
+						keyLbl.Text = "[" .. comp._value .. "]"
 						ConfigSystem:Set(comp._saveKey, comp._value)
 						if fire and isFn(comp._callback) then
 							task.spawn(function() pcall(comp._callback, comp._value) end)
@@ -3011,7 +3030,7 @@ function Library:CreateWindow(...)
 					comp.Destroy = function() DisconnectAll(comp) pcall(function() row:Destroy() end) end
 					Track(comp, keyBtn.MouseButton1Click:Connect(function()
 						comp._binding = true
-						keyBtn.Text = "[...]"
+						keyLbl.Text = "[...]"
 					end))
 					Track(comp, UserInputService.InputBegan:Connect(function(input, gpe)
 						if comp._binding and input.UserInputType == Enum.UserInputType.Keyboard then
@@ -3019,7 +3038,7 @@ function Library:CreateWindow(...)
 							if input.KeyCode ~= Enum.KeyCode.Unknown then
 								SetKey(input.KeyCode.Name, true)
 							else
-								keyBtn.Text = "[" .. comp._value .. "]"
+								keyLbl.Text = "[" .. comp._value .. "]"
 							end
 						elseif not comp._binding and not gpe and input.UserInputType == Enum.UserInputType.Keyboard then
 							if input.KeyCode.Name == comp._value and isFn(comp._callback) then
