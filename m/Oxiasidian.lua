@@ -1855,9 +1855,10 @@ function Library:CreateWindow(...)
 			else
 				btn.BackgroundTransparency = 0.3
 				btn.BackgroundColor3 = th.Surface2
-				bs.Color = th.Border
+				-- tab ที่ไม่เลือก: กรอบสี accent แบบจาง (ต่างจากพื้นหลังชัดเจน ไม่กลืน)
+				bs.Color = th.Accent
 				bs.Thickness = 1
-				bs.Transparency = 0
+				bs.Transparency = 0.5
 				activeGrad.Enabled = false
 				-- tab ที่ไม่ active ใช้ TextMuted (สว่างกว่า TextDim เดิมมาก) อ่านออกชัดเจน
 				btn.TextColor3 = th.TextMuted
@@ -1865,6 +1866,7 @@ function Library:CreateWindow(...)
 			end
 		end
 		Tab._Paint = Paint
+		Paint(false) -- เริ่มต้นด้วยลุค inactive (กรอบ accent จาง) ทุก tab
 		OnTheme(function(t)
 			th = t
 			btn.BackgroundColor3 = t.Surface2
