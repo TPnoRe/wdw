@@ -1307,7 +1307,7 @@ function Library:CreateWindow(...)
 	local function HBtn(txt, x)
 		local b = New("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, x, 0.5, 0),
 			Size = UDim2.new(0, 28, 0, 24), BackgroundColor3 = theme.Surface2, Text = txt,
-			Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = theme.TextMuted }, header)
+			Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = theme.Text }, header)
 		MechaCorner(b)
 		Stroke(b, theme.Border, 1)
 		return b
@@ -1798,16 +1798,15 @@ function Library:CreateWindow(...)
 		local th = Window._theme
 		local tabIdx = #Window._tabs + 1
 		local tabLabel = string.format("[%02d %s]", tabIdx, string.upper(name))
+		-- S+: ตัวหนังสือวางบนปุ่มโดยตรง (ไม่ซ้อน label) ให้ AutomaticSize วัดความกว้างถูก + อ่านชัด
 		local btn = New("TextButton", { Name = "Tab_" .. name, AutomaticSize = Enum.AutomaticSize.X,
-			Size = UDim2.new(0, 0, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.4,
-			Text = "", LayoutOrder = tabIdx }, holder)
+			Size = UDim2.new(0, 0, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
+			Text = tabLabel, Font = Enum.Font.GothamBlack, TextSize = 11,
+			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.AtEnd,
+			LayoutOrder = tabIdx }, holder)
 		MechaCorner(btn)
 		local bs = Stroke(btn, th.Border, 1)
-		Pad(btn, 0, 12, 0, 12)
-		local nm = New("TextLabel", { Size = UDim2.new(0, 0, 0, 28), AutomaticSize = Enum.AutomaticSize.X,
-			BackgroundTransparency = 1, Text = tabLabel, Font = Enum.Font.GothamBlack, TextSize = 10,
-			TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = th.TextDim }, btn)
-		Pad(nm, 0, 12, 0, 12)
+		Pad(btn, 0, 14, 0, 14)
 		-- gradient ตอน active (preview: accent 25% -> accent2 20%)
 		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent)
 		activeGrad.Enabled = false
@@ -1849,16 +1848,17 @@ function Library:CreateWindow(...)
 						ColorSequenceKeypoint.new(1, th.Accent2 or th.Accent),
 					})
 				end)
-				nm.TextColor3 = Color3.fromRGB(255, 255, 255)
-				nm.Font = Enum.Font.GothamBlack
+				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+				btn.Font = Enum.Font.GothamBlack
 			else
-				btn.BackgroundTransparency = 0.55
+				btn.BackgroundTransparency = 0.3
 				btn.BackgroundColor3 = th.Surface2
 				bs.Color = th.Border
 				bs.Transparency = 0
 				activeGrad.Enabled = false
-				nm.TextColor3 = th.TextDim
-				nm.Font = Enum.Font.GothamBold
+				-- tab ที่ไม่ active ใช้ TextMuted (สว่างกว่า TextDim เดิมมาก) อ่านออกชัดเจน
+				btn.TextColor3 = th.TextMuted
+				btn.Font = Enum.Font.GothamBold
 			end
 		end
 		Tab._Paint = Paint
@@ -1966,7 +1966,7 @@ function Library:CreateWindow(...)
 						subLbl = New("TextLabel", { Position = UDim2.new(0, 10, 0, 20), Size = UDim2.new(1, -66, 0, 13),
 							BackgroundTransparency = 1, Text = toStr(desc), Font = Enum.Font.Gotham, TextSize = 9,
 							TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-							TextColor3 = Window._theme.TextDim }, row)
+							TextColor3 = Window._theme.TextMuted }, row)
 					end
 					-- diamond-toggle: ราง 44x22 + knob ข้าวหลามตัด 14px
 					local sw = New("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
@@ -1993,7 +1993,7 @@ function Library:CreateWindow(...)
 						row.BackgroundColor3 = t.Surface2
 						rowStroke.Color = t.Border
 						swStroke.Color = comp._value and t.Accent or t.Border
-						if subLbl then subLbl.TextColor3 = t.TextDim end
+						if subLbl then subLbl.TextColor3 = t.TextMuted end
 						if comp._value then sw.BackgroundColor3 = t.Accent
 						else sw.BackgroundColor3 = t.Surface3 end
 					end)
@@ -2074,16 +2074,18 @@ function Library:CreateWindow(...)
 						elseif type(v) == "boolean" and v == true then locked = true
 						elseif isStr(v) and desc == nil and v:find(" ") then desc = v end
 					end
-					local b = New("TextButton", { Size = UDim2.new(1, 0, 0, 34),
+					local b = New("TextButton", { Size = UDim2.new(1, 0, 0, 36),
 						BackgroundColor3 = Window._theme.Surface2, Text = label,
-						Font = Enum.Font.GothamBlack, TextSize = 10,
-						TextColor3 = Color3.fromRGB(255, 255, 255),
+						Font = Enum.Font.GothamBlack, TextSize = 13,
+						TextColor3 = locked and Window._theme.TextDim or Color3.fromRGB(255, 255, 255),
+						TextTruncate = Enum.TextTruncate.AtEnd,
 						LayoutOrder = NextOrder() }, box)
 					MechaCorner(b)
-					local bs2 = Stroke(b, Window._theme.Accent, 1)
+					local bs2 = Stroke(b, Window._theme.Accent, 1.5)
 					local grad = MechaGradient(b, Window._theme.Accent, Window._theme.Accent2 or Window._theme.Accent)
 					OnTheme(function(t)
 						b.BackgroundColor3 = t.Surface2
+						b.TextColor3 = locked and t.TextDim or Color3.fromRGB(255, 255, 255)
 						bs2.Color = t.Accent
 						pcall(function()
 							grad.Color = ColorSequence.new({
@@ -2104,10 +2106,10 @@ function Library:CreateWindow(...)
 						if isFn(cb) then task.spawn(function() pcall(cb) end) end
 					end))
 					Track(comp, b.MouseEnter:Connect(function()
-						if not locked then Tween(b, { BackgroundColor3 = Window._theme.Surface3 }, T_INST) end
+						if not locked then Tween(b, { BackgroundTransparency = 0.25 }, T_INST) end
 					end))
 					Track(comp, b.MouseLeave:Connect(function()
-						if not locked then Tween(b, { BackgroundColor3 = Window._theme.Surface }, T_INST) end
+						if not locked then Tween(b, { BackgroundTransparency = 0 }, T_INST) end
 					end))
 					AddChild(Menu, comp)
 					AddChild(Window, comp)
@@ -2131,10 +2133,11 @@ function Library:CreateWindow(...)
 					local function MakeBtn(text, cb, locked, parent, w)
 						local b = New("TextButton", { Size = w,
 							BackgroundColor3 = Window._theme.Surface2, Text = toStr(text),
-							Font = Enum.Font.GothamBlack, TextSize = 10,
-							TextColor3 = Color3.fromRGB(255, 255, 255) }, parent)
+							Font = Enum.Font.GothamBlack, TextSize = 12,
+							TextColor3 = locked and Window._theme.TextDim or Color3.fromRGB(255, 255, 255),
+							TextTruncate = Enum.TextTruncate.AtEnd }, parent)
 						MechaCorner(b)
-						Stroke(b, Window._theme.Accent, 1)
+						Stroke(b, Window._theme.Accent, 1.5)
 						MechaGradient(b, Window._theme.Accent, Window._theme.Accent2 or Window._theme.Accent)
 						Track(comp, b.MouseButton1Click:Connect(function()
 							if locked then return end
@@ -2525,7 +2528,7 @@ function Library:CreateWindow(...)
 						New("TextLabel", { Position = UDim2.new(0, 10, 0, 17), Size = UDim2.new(1, -20, 0, 11),
 							BackgroundTransparency = 1, Text = toStr(desc), Font = Enum.Font.Gotham, TextSize = 9,
 							TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-							TextColor3 = Window._theme.TextDim }, row)
+							TextColor3 = Window._theme.TextMuted }, row)
 					end
 					local selY = (desc and desc ~= "") and 32 or 20
 					local sel = New("TextButton", { Position = UDim2.new(0, 8, 0, selY),
@@ -2558,12 +2561,12 @@ function Library:CreateWindow(...)
 					HList(actBar, 4)
 					local allBtn = New("TextButton", { Size = UDim2.new(0.5, -2, 0, 22),
 						BackgroundColor3 = Window._theme.Surface3, Text = "[ALL]",
-						Font = Enum.Font.GothamBold, TextSize = 9, TextColor3 = Window._theme.TextDim }, actBar)
+						Font = Enum.Font.GothamBlack, TextSize = 10, TextColor3 = Window._theme.TextMuted }, actBar)
 					MechaCorner(allBtn)
 					Stroke(allBtn, Window._theme.Border, 1)
 					local clearBtn = New("TextButton", { Size = UDim2.new(0.5, -2, 0, 22),
 						BackgroundColor3 = Window._theme.Surface3, Text = "[CLEAR]",
-						Font = Enum.Font.GothamBold, TextSize = 9, TextColor3 = Window._theme.TextDim }, actBar)
+						Font = Enum.Font.GothamBlack, TextSize = 10, TextColor3 = Window._theme.TextMuted }, actBar)
 					MechaCorner(clearBtn)
 					Stroke(clearBtn, Window._theme.Border, 1)
 					local search = New("TextBox", { Size = UDim2.new(1, 0, 0, 24),
@@ -2700,9 +2703,9 @@ function Library:CreateWindow(...)
 								-- marker แบบ preview: multi [x]/[ ] , single >
 								local marker = multi and (selNow and "[x]" or "[ ]") or ">"
 								New("TextLabel", { Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(1, -16, 1, 0),
-									BackgroundTransparency = 1, Text = marker .. "  " .. opt, Font = Enum.Font.Code, TextSize = 10,
+									BackgroundTransparency = 1, Text = marker .. "  " .. opt, Font = Enum.Font.GothamBold, TextSize = 11,
 									TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-									TextColor3 = selNow and Window._theme.Accent or Window._theme.TextDim }, ob)
+									TextColor3 = selNow and Window._theme.Accent or Window._theme.TextMuted }, ob)
 								comp._pool[opt] = ob
 								Track(comp, ob.MouseButton1Click:Connect(function()
 									SFX:Click()
