@@ -1792,30 +1792,32 @@ function Library:CreateWindow(...)
 		local raw = { ... }
 		if raw[1] == Window then table.remove(raw, 1) end
 		local name = toStr(raw[1] or ("Tab " .. (#Window._tabs + 1)))
-		local iconId = raw[2]
-		-- S+: ทุก tab อยู่บน top-nav หมด (รวม Settings/Config) เหมือน preview .top-nav-bar
-		local holder = Window._navScroll
+		local iconId = raw[2] -- เก็บไว้เพื่อ API compat (ป้ายแสดงเป็น [NN NAME])
 		local th = Window._theme
 		local tabIdx = #Window._tabs + 1
 		local tabLabel = string.format("[%02d %s]", tabIdx, string.upper(name))
-		-- S+: ตัวหนังสือวางบนปุ่มโดยตรง (ไม่ซ้อน label) ให้ AutomaticSize วัดความกว้างถูก + อ่านชัด
+
+		-- ---- 3.1 ปุ่ม tab บน top-nav ----
+		-- ข้อความวางบนปุ่มโดยตรง (ไม่ซ้อน TextLabel) เพื่อให้ AutomaticSize.X วัดความกว้างถูก
 		local btn = New("TextButton", { Name = "Tab_" .. name, AutomaticSize = Enum.AutomaticSize.X,
 			Size = UDim2.new(0, 0, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
-			Text = tabLabel, Font = Enum.Font.GothamBlack, TextSize = 11,
+			Text = tabLabel, Font = Enum.Font.GothamBold, TextSize = 11,
 			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.AtEnd,
-			LayoutOrder = tabIdx }, holder)
+			AutoButtonColor = false, LayoutOrder = tabIdx }, Window._navScroll)
 		MechaCorner(btn)
-		local bs = Stroke(btn, th.Border, 1)
+		local bs = Stroke(btn, th.Accent, 1)
+		bs.Transparency = 0.5
 		Pad(btn, 0, 14, 0, 14)
-		-- gradient ตอน active (preview: accent 25% -> accent2 20%)
+		-- พื้น gradient เฉพาะตอน active (preview: accent -> accent2)
 		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent)
 		activeGrad.Enabled = false
-		-- แถบ indicator ใต้ tab ที่เลือก: แท่งทึบสว่าง มองเห็นชัดแม้มี bloom
-		-- (อยู่ใน padding จึงเว้นขอบซ้ายขวา เป็นเส้นใต้ label พอดี)
+		-- เส้น indicator ใต้ tab ที่เลือก (แท่งทึบ ไม่โดน bloom กลืน)
 		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 3),
 			Position = UDim2.new(0, 0, 1, -3),
 			BackgroundColor3 = th.AccentHover or th.Accent, BorderSizePixel = 0,
 			Visible = false }, btn)
+
+		-- ---- 3.2 หน้า content ของ tab ----
 		local page = New("ScrollingFrame", { Name = "Page_" .. name,
 			Size = UDim2.new(1, -12, 1, -12), Position = UDim2.new(0, 6, 0, 6),
 			BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = th.Border,
@@ -1823,7 +1825,7 @@ function Library:CreateWindow(...)
 			AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false }, Window._contentWrap)
 		List(page, 8)
 		Pad(page, 4, 6, 10, 6)
-		-- ส่วนหัวหน้าเพจสไตล์ MECHA: breadcrumb + ชื่อ tab ตัวใหญ่
+		-- หัวหน้าเพจ: breadcrumb + ชื่อ tab
 		local ph = New("Frame", { Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, LayoutOrder = 0 }, page)
 		local crumb = New("TextLabel", { Position = UDim2.new(0, 2, 0, 0), Size = UDim2.new(1, -4, 0, 11),
 			BackgroundTransparency = 1, Text = "OVERVIEW / " .. string.upper(name),
@@ -1839,13 +1841,14 @@ function Library:CreateWindow(...)
 			ptitle.TextColor3 = t.Accent
 		end)
 
+		-- ---- 3.3 object + ฟังก์ชันระบายสี ----
 		local Tab = { _window = Window, _button = btn, _page = page, _sections = {},
 			_conns = {}, _children = {}, Name = name, Icon = iconId, _isConfig = false }
 		local function Paint(active)
 			if active then
+				-- เลือกอยู่: พื้นทึบ + กรอบหนา 3px สีสว่าง + เส้นใต้ + ตัวหนังสือขาว
 				btn.BackgroundTransparency = 0
 				btn.BackgroundColor3 = th.Surface2
-				-- tab ที่เลือก: กรอบหนา 3px สีสว่าง + แถบ indicator ใต้ปุ่ม มองเห็นขอบชัด
 				bs.Color = th.AccentHover or th.Accent
 				bs.Thickness = 3
 				bs.Transparency = 0
@@ -1861,21 +1864,20 @@ function Library:CreateWindow(...)
 				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 				btn.Font = Enum.Font.GothamBlack
 			else
+				-- ยังไม่เลือก: พื้นจาง + กรอบ accent จาง 1px + ตัวหนังสือสว่างอ่านออก
 				btn.BackgroundTransparency = 0.3
 				btn.BackgroundColor3 = th.Surface2
-				-- tab ที่ไม่เลือก: กรอบสี accent แบบจาง (ต่างจากพื้นหลังชัดเจน ไม่กลืน)
 				bs.Color = th.Accent
 				bs.Thickness = 1
 				bs.Transparency = 0.5
 				activeBar.Visible = false
 				activeGrad.Enabled = false
-				-- tab ที่ไม่ active ใช้ TextMuted (สว่างกว่า TextDim เดิมมาก) อ่านออกชัดเจน
 				btn.TextColor3 = th.TextMuted
 				btn.Font = Enum.Font.GothamBold
 			end
 		end
 		Tab._Paint = Paint
-		Paint(false) -- เริ่มต้นด้วยลุค inactive (กรอบ accent จาง) ทุก tab
+		Paint(false) -- เริ่มทุก tab ด้วยลุค inactive
 		OnTheme(function(t)
 			th = t
 			btn.BackgroundColor3 = t.Surface2
@@ -1890,6 +1892,8 @@ function Library:CreateWindow(...)
 			end
 			Window._activeTab = Tab
 		end
+
+		-- ---- 3.4 event ----
 		Track(Tab, btn.MouseButton1Click:Connect(function()
 			SFX:Click()
 			Tab:Select()
