@@ -1815,8 +1815,6 @@ function Library:CreateWindow(...)
 		Pad(btn, 0, 14, 0, 14)
 		local bs = Stroke(btn, th.Accent, 1, 0.35)
 		-- พื้น gradient เฉพาะตอน active
-		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent, 0.45)
-		activeGrad.Enabled = false
 		-- เส้นใต้ tab ที่เลือก
 		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 4), Position = UDim2.new(0, 0, 1, -4),
 			BackgroundColor3 = th.AccentHover or th.Accent, BorderSizePixel = 0, Visible = false }, btn)
@@ -1851,23 +1849,15 @@ function Library:CreateWindow(...)
 		local function Paint(active, t)
 			t = t or Window._theme
 			local accentHi = t.AccentHover or t.Accent
-			local accent2 = t.Accent2 or t.Accent
 			if active then
 				-- เลือกอยู่: พื้นทึบ + กรอบหนา + เส้นใต้ + ตัวหนังสือขาว
 				btn.BackgroundTransparency = 0
-				btn.BackgroundColor3 = t.Surface2
+				btn.BackgroundColor3 = t.AccentDark or t.Accent
 				bs.Color = accentHi
 				bs.Thickness = 3
 				bs.Transparency = 0
 				activeBar.Visible = true
 				activeBar.BackgroundColor3 = accentHi
-				activeGrad.Enabled = true
-				pcall(function()
-					activeGrad.Color = ColorSequence.new({
-						ColorSequenceKeypoint.new(0, t.Accent),
-						ColorSequenceKeypoint.new(1, accent2),
-					})
-				end)
 				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 				btn.Font = Enum.Font.GothamBlack
 			else
@@ -1878,7 +1868,6 @@ function Library:CreateWindow(...)
 				bs.Thickness = 1
 				bs.Transparency = 0.35
 				activeBar.Visible = false
-				activeGrad.Enabled = false
 				btn.TextColor3 = t.TextMuted
 				btn.Font = Enum.Font.GothamBold
 			end
