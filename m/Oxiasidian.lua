@@ -1806,10 +1806,15 @@ function Library:CreateWindow(...)
 
 		-- ---- 3.1 ปุ่ม tab บน top-nav ----
 		-- ข้อความอยู่บนปุ่มโดยตรง (ไม่ซ้อน TextLabel) เพื่อให้ AutomaticSize.X วัดความกว้างถูก
-		local btn = New("TextButton", { Name = "Tab_" .. name, AutomaticSize = Enum.AutomaticSize.X,
-			Size = UDim2.new(0, 0, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
+		-- คำนวณความกว้างจากข้อความจริง (GothamBlack คือตัวที่กว้างสุด) เพื่อไม่ให้ชื่อโดนตัดเป็น "..."
+		local okW, textW = pcall(function()
+			return game:GetService("TextService"):GetTextSize(tabLabel, 11, Enum.Font.GothamBlack, Vector2.new(10000, 28)).X
+		 end)
+		local btnW = (okW and textW or 120) + 30
+		local btn = New("TextButton", { Name = "Tab_" .. name,
+			Size = UDim2.new(0, btnW, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
 			Text = tabLabel, Font = Enum.Font.GothamBold, TextSize = 11,
-			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.AtEnd,
+			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.None,
 			AutoButtonColor = false, LayoutOrder = tabIdx }, Window._navScroll)
 		MechaCorner(btn)
 		Pad(btn, 0, 14, 0, 14)
@@ -2027,8 +2032,13 @@ function Library:CreateWindow(...)
 						rowStroke.Color = t.Border
 						swStroke.Color = comp._value and t.Accent or t.Border
 						if subLbl then subLbl.TextColor3 = t.TextMuted end
-						if comp._value then sw.BackgroundColor3 = t.Accent
-						else sw.BackgroundColor3 = t.Surface3 end
+						if comp._value then
+							sw.BackgroundColor3 = square and t.Accent or Color3.fromRGB(9, 30, 18)
+							if not square and knob then knob.BackgroundColor3 = t.Accent end
+						else
+							sw.BackgroundColor3 = t.Surface3
+							if not square and knob then knob.BackgroundColor3 = t.TextDim end
+						end
 					end)
 					local function Paint(anim)
 						local on = comp._value
