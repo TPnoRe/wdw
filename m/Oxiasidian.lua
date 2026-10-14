@@ -1810,6 +1810,12 @@ function Library:CreateWindow(...)
 		-- gradient ตอน active (preview: accent 25% -> accent2 20%)
 		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent)
 		activeGrad.Enabled = false
+		-- แถบ indicator ใต้ tab ที่เลือก: แท่งทึบสว่าง มองเห็นชัดแม้มี bloom
+		-- (อยู่ใน padding จึงเว้นขอบซ้ายขวา เป็นเส้นใต้ label พอดี)
+		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 3),
+			Position = UDim2.new(0, 0, 1, -3),
+			BackgroundColor3 = th.AccentHover or th.Accent, BorderSizePixel = 0,
+			Visible = false }, btn)
 		local page = New("ScrollingFrame", { Name = "Page_" .. name,
 			Size = UDim2.new(1, -12, 1, -12), Position = UDim2.new(0, 6, 0, 6),
 			BackgroundTransparency = 1, ScrollBarThickness = 4, ScrollBarImageColor3 = th.Border,
@@ -1839,10 +1845,12 @@ function Library:CreateWindow(...)
 			if active then
 				btn.BackgroundTransparency = 0
 				btn.BackgroundColor3 = th.Surface2
-				-- tab ที่เลือก: กรอบหนา 2px สีสว่างกว่า glow พื้นหลัง มองเห็นขอบชัด
+				-- tab ที่เลือก: กรอบหนา 3px สีสว่าง + แถบ indicator ใต้ปุ่ม มองเห็นขอบชัด
 				bs.Color = th.AccentHover or th.Accent
-				bs.Thickness = 2
+				bs.Thickness = 3
 				bs.Transparency = 0
+				activeBar.Visible = true
+				activeBar.BackgroundColor3 = th.AccentHover or th.Accent
 				activeGrad.Enabled = true
 				pcall(function()
 					activeGrad.Color = ColorSequence.new({
@@ -1859,6 +1867,7 @@ function Library:CreateWindow(...)
 				bs.Color = th.Accent
 				bs.Thickness = 1
 				bs.Transparency = 0.5
+				activeBar.Visible = false
 				activeGrad.Enabled = false
 				-- tab ที่ไม่ active ใช้ TextMuted (สว่างกว่า TextDim เดิมมาก) อ่านออกชัดเจน
 				btn.TextColor3 = th.TextMuted
