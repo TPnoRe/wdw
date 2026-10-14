@@ -1839,7 +1839,9 @@ function Library:CreateWindow(...)
 			if active then
 				btn.BackgroundTransparency = 0
 				btn.BackgroundColor3 = th.Surface2
-				bs.Color = th.Accent
+				-- tab ที่เลือก: กรอบหนา 2px สีสว่างกว่า glow พื้นหลัง มองเห็นขอบชัด
+				bs.Color = th.AccentHover or th.Accent
+				bs.Thickness = 2
 				bs.Transparency = 0
 				activeGrad.Enabled = true
 				pcall(function()
@@ -1854,6 +1856,7 @@ function Library:CreateWindow(...)
 				btn.BackgroundTransparency = 0.3
 				btn.BackgroundColor3 = th.Surface2
 				bs.Color = th.Border
+				bs.Thickness = 1
 				bs.Transparency = 0
 				activeGrad.Enabled = false
 				-- tab ที่ไม่ active ใช้ TextMuted (สว่างกว่า TextDim เดิมมาก) อ่านออกชัดเจน
