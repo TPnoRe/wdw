@@ -124,8 +124,10 @@ local function HList(p, gap)
 		FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left,
 		VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }, p)
 end
-local function MechaGradient(p, c1, c2)
+local function MechaGradient(p, c1, c2, tr)
 	-- ปุ่มสไตล์ preview: linear-gradient(90deg, accent 20% -> accent2 20%)
+	-- tr = ความโปร่งของสีไล่ (default 0.78 จางๆ, tab active ใช้ 0.45 ให้เห็นชัด)
+	tr = (type(tr) == "number") and tr or 0.78
 	local g = New("UIGradient", { Rotation = 90 }, p)
 	pcall(function()
 		g.Color = ColorSequence.new({
@@ -133,8 +135,8 @@ local function MechaGradient(p, c1, c2)
 			ColorSequenceKeypoint.new(1, c2),
 		})
 		g.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.78),
-			NumberSequenceKeypoint.new(1, 0.78),
+			NumberSequenceKeypoint.new(0, tr),
+			NumberSequenceKeypoint.new(1, tr),
 		})
 	end)
 	return g
@@ -1808,8 +1810,8 @@ function Library:CreateWindow(...)
 		local bs = Stroke(btn, th.Accent, 1)
 		bs.Transparency = 0.5
 		Pad(btn, 0, 14, 0, 14)
-		-- พื้น gradient เฉพาะตอน active (preview: accent -> accent2)
-		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent)
+		-- พื้น gradient เฉพาะตอน active (เข้มกว่าปุ่มทั่วไป ให้ tab ที่เลือกเด่นชัด)
+		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent, 0.45)
 		activeGrad.Enabled = false
 		-- เส้น indicator ใต้ tab ที่เลือก (แท่งทึบ ไม่โดน bloom กลืน)
 		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 3),
@@ -1869,7 +1871,7 @@ function Library:CreateWindow(...)
 				btn.BackgroundColor3 = th.Surface2
 				bs.Color = th.Accent
 				bs.Thickness = 1
-				bs.Transparency = 0.5
+				bs.Transparency = 0.35
 				activeBar.Visible = false
 				activeGrad.Enabled = false
 				btn.TextColor3 = th.TextMuted
