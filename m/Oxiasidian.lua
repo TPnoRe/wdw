@@ -1295,7 +1295,7 @@ function Library:CreateWindow(...)
 		BackgroundTransparency = 1, Text = subtitle .. " · " .. version .. " (v" .. tostring(Library.Version) .. ")", Font = Enum.Font.Gotham,
 		TextSize = 9, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = theme.TextMuted }, header)
 	-- search box ขวา (FEATURE 1: LIVE SEARCH)
-	local searchBox = New("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -82, 0.5, 0),
+	local searchBox = New("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -110, 0.5, 0),
 		Size = UDim2.new(0, 118, 0, 24), BackgroundColor3 = theme.Surface3, BorderSizePixel = 0 }, header)
 	MechaCorner(searchBox)
 	Stroke(searchBox, theme.Border, 1)
@@ -1384,6 +1384,7 @@ function Library:CreateWindow(...)
 	}
 	local function OnTheme(fn) table.insert(Window._themed, fn) end
 	Window._OnTheme = OnTheme
+	Window._header = header
 	OnTheme(function(t)
 		brandDot.BackgroundColor3 = t.Accent
 		mainStroke.Color = t.BorderGlow or t.Accent
@@ -1811,11 +1812,23 @@ function Library:CreateWindow(...)
 			return game:GetService("TextService"):GetTextSize(tabLabel, 11, Enum.Font.GothamBlack, Vector2.new(10000, 28)).X
 		 end)
 		local btnW = (okW and textW or 120) + 30
+		-- Settings ไม่อยู่บนแถบ tab แล้ว แต่เป็นปุ่มรูปเฟืองข้างปุ่ม "-" บน header
+		local isGear = (string.lower(name) == "settings") and Window._header ~= nil
 		local btn = New("TextButton", { Name = "Tab_" .. name,
-			Size = UDim2.new(0, btnW, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
-			Text = tabLabel, Font = Enum.Font.GothamBold, TextSize = 11,
+			AnchorPoint = isGear and Vector2.new(1, 0.5) or Vector2.new(0, 0),
+			Position = isGear and UDim2.new(1, -74, 0.5, 0) or UDim2.new(0, 0, 0, 0),
+			Size = isGear and UDim2.new(0, 28, 0, 24) or UDim2.new(0, btnW, 0, 28),
+			BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
+			Text = isGear and "" or tabLabel, Font = Enum.Font.GothamBold, TextSize = 11,
 			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.None,
-			AutoButtonColor = false, LayoutOrder = tabIdx }, Window._navScroll)
+			AutoButtonColor = false, LayoutOrder = tabIdx }, isGear and Window._header or Window._navScroll)
+		local icon = nil
+		if isGear then
+			icon = New("ImageLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+				Size = UDim2.new(0, 14, 0, 14), BackgroundTransparency = 1,
+				Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsIcon.png",
+				ImageColor3 = th.TextMuted }, btn)
+		end
 		MechaCorner(btn)
 		Pad(btn, 0, 14, 0, 14)
 		local bs = Stroke(btn, th.Accent, 1, 0.35)
@@ -1865,6 +1878,7 @@ function Library:CreateWindow(...)
 				activeBar.BackgroundColor3 = accentHi
 				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 				btn.Font = Enum.Font.GothamBlack
+				if icon then icon.ImageColor3 = Color3.fromRGB(255, 255, 255) end
 			else
 				-- ยังไม่เลือก: พื้นจาง + กรอบ accent จาง + ตัวหนังสือสว่างอ่านออก
 				btn.BackgroundTransparency = 0.3
@@ -1875,6 +1889,7 @@ function Library:CreateWindow(...)
 				activeBar.Visible = false
 				btn.TextColor3 = t.TextMuted
 				btn.Font = Enum.Font.GothamBold
+				if icon then icon.ImageColor3 = t.TextMuted end
 			end
 		end
 		Tab._Paint = Paint
