@@ -1733,7 +1733,6 @@ function Library:CreateWindow(...)
 			if getgenv then
 				getgenv().OxiasidianActive = nil
 				getgenv().OxiasidianGUI = nil
-				getgenv().QuantumOnyxGUI = nil
 			end
 		end)
 		local src = nil
@@ -1791,33 +1790,35 @@ function Library:CreateWindow(...)
 		return self:CreateTab(toStr(a[1] or ("Tab " .. (#self._tabs + 1))), a[2])
 	end
 	function Window:CreateTab(...)
-		local raw = { ... }
-		if raw[1] == Window then table.remove(raw, 1) end
-		local name = toStr(raw[1] or ("Tab " .. (#Window._tabs + 1)))
-		local iconId = raw[2] -- เก็บไว้เพื่อ API compat (ป้ายแสดงเป็น [NN NAME])
+		local a = Pack(Window, ...)
+		local name = toStr(a[1] ~= nil and a[1] or ("Tab " .. (#Window._tabs + 1)))
+		local iconId = a[2] -- เก็บไว้เพื่อ API compat
+
+		-- ชื่อซ้ำ: คืน tab เดิม ไม่สร้างปุ่มซ้อน
+		for _, existing in ipairs(Window._tabs) do
+			if existing.Name == name then return existing end
+		end
+
 		local th = Window._theme
 		local tabIdx = #Window._tabs + 1
 		local tabLabel = string.format("[%02d %s]", tabIdx, string.upper(name))
 
 		-- ---- 3.1 ปุ่ม tab บน top-nav ----
-		-- ข้อความวางบนปุ่มโดยตรง (ไม่ซ้อน TextLabel) เพื่อให้ AutomaticSize.X วัดความกว้างถูก
+		-- ข้อความอยู่บนปุ่มโดยตรง (ไม่ซ้อน TextLabel) เพื่อให้ AutomaticSize.X วัดความกว้างถูก
 		local btn = New("TextButton", { Name = "Tab_" .. name, AutomaticSize = Enum.AutomaticSize.X,
 			Size = UDim2.new(0, 0, 0, 28), BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
 			Text = tabLabel, Font = Enum.Font.GothamBold, TextSize = 11,
 			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.AtEnd,
 			AutoButtonColor = false, LayoutOrder = tabIdx }, Window._navScroll)
 		MechaCorner(btn)
-		local bs = Stroke(btn, th.Accent, 1)
-		bs.Transparency = 0.5
 		Pad(btn, 0, 14, 0, 14)
-		-- พื้น gradient เฉพาะตอน active (เข้มกว่าปุ่มทั่วไป ให้ tab ที่เลือกเด่นชัด)
+		local bs = Stroke(btn, th.Accent, 1, 0.35)
+		-- พื้น gradient เฉพาะตอน active
 		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent, 0.45)
 		activeGrad.Enabled = false
-		-- เส้น indicator ใต้ tab ที่เลือก (แท่งทึบ ไม่โดน bloom กลืน)
-		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 3),
-			Position = UDim2.new(0, 0, 1, -3),
-			BackgroundColor3 = th.AccentHover or th.Accent, BorderSizePixel = 0,
-			Visible = false }, btn)
+		-- เส้นใต้ tab ที่เลือก
+		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 3), Position = UDim2.new(0, 0, 1, -3),
+			BackgroundColor3 = th.AccentHover or th.Accent, BorderSizePixel = 0, Visible = false }, btn)
 
 		-- ---- 3.2 หน้า content ของ tab ----
 		local page = New("ScrollingFrame", { Name = "Page_" .. name,
@@ -1827,75 +1828,97 @@ function Library:CreateWindow(...)
 			AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false }, Window._contentWrap)
 		List(page, 8)
 		Pad(page, 4, 6, 10, 6)
+
 		-- หัวหน้าเพจ: breadcrumb + ชื่อ tab
 		local ph = New("Frame", { Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, LayoutOrder = 0 }, page)
 		local crumb = New("TextLabel", { Position = UDim2.new(0, 2, 0, 0), Size = UDim2.new(1, -4, 0, 11),
 			BackgroundTransparency = 1, Text = "OVERVIEW / " .. string.upper(name),
 			Font = Enum.Font.Gotham, TextSize = 9,
-			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Window._theme.TextDim }, ph)
+			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = th.TextDim }, ph)
 		local ptitle = New("TextLabel", { Position = UDim2.new(0, 2, 0, 11), Size = UDim2.new(1, -4, 0, 19),
 			BackgroundTransparency = 1, Text = "▶ " .. string.upper(name),
 			Font = Enum.Font.GothamBlack, TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-			TextColor3 = Window._theme.Accent }, ph)
-		OnTheme(function(t)
-			crumb.TextColor3 = t.TextDim
-			ptitle.TextColor3 = t.Accent
-		end)
+			TextColor3 = th.Accent }, ph)
 
-		-- ---- 3.3 object + ฟังก์ชันระบายสี ----
+		-- ---- 3.3 object ----
 		local Tab = { _window = Window, _button = btn, _page = page, _sections = {},
 			_conns = {}, _children = {}, Name = name, Icon = iconId, _isConfig = false }
-		local function Paint(active)
+		table.insert(Window._tabs, Tab) -- ลงทะเบียนทันที เพื่อให้ index และการเช็คชื่อซ้ำถูกต้อง
+
+		-- ---- 3.4 ระบายสีตามสถานะ active / inactive ----
+		local function Paint(active, t)
+			t = t or Window._theme
+			local accentHi = t.AccentHover or t.Accent
+			local accent2 = t.Accent2 or t.Accent
 			if active then
-				-- เลือกอยู่: พื้นทึบ + กรอบหนา 3px สีสว่าง + เส้นใต้ + ตัวหนังสือขาว
+				-- เลือกอยู่: พื้นทึบ + กรอบหนา + เส้นใต้ + ตัวหนังสือขาว
 				btn.BackgroundTransparency = 0
-				btn.BackgroundColor3 = th.Surface2
-				bs.Color = th.AccentHover or th.Accent
+				btn.BackgroundColor3 = t.Surface2
+				bs.Color = accentHi
 				bs.Thickness = 3
 				bs.Transparency = 0
 				activeBar.Visible = true
-				activeBar.BackgroundColor3 = th.AccentHover or th.Accent
+				activeBar.BackgroundColor3 = accentHi
 				activeGrad.Enabled = true
 				pcall(function()
 					activeGrad.Color = ColorSequence.new({
-						ColorSequenceKeypoint.new(0, th.Accent),
-						ColorSequenceKeypoint.new(1, th.Accent2 or th.Accent),
+						ColorSequenceKeypoint.new(0, t.Accent),
+						ColorSequenceKeypoint.new(1, accent2),
 					})
 				end)
 				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 				btn.Font = Enum.Font.GothamBlack
 			else
-				-- ยังไม่เลือก: พื้นจาง + กรอบ accent จาง 1px + ตัวหนังสือสว่างอ่านออก
+				-- ยังไม่เลือก: พื้นจาง + กรอบ accent จาง + ตัวหนังสือสว่างอ่านออก
 				btn.BackgroundTransparency = 0.3
-				btn.BackgroundColor3 = th.Surface2
-				bs.Color = th.Accent
+				btn.BackgroundColor3 = t.Surface2
+				bs.Color = t.Accent
 				bs.Thickness = 1
 				bs.Transparency = 0.35
 				activeBar.Visible = false
 				activeGrad.Enabled = false
-				btn.TextColor3 = th.TextMuted
+				btn.TextColor3 = t.TextMuted
 				btn.Font = Enum.Font.GothamBold
 			end
 		end
 		Tab._Paint = Paint
-		Paint(false) -- เริ่มทุก tab ด้วยลุค inactive
+		Paint(false)
+
+		-- ---- 3.5 การเลือก tab ----
+		function Tab:Select()
+			local prev = Window._activeTab
+			for _, o in ipairs(Window._tabs) do
+				local act = (o == Tab)
+				o._page.Visible = act
+				pcall(o._Paint, act)
+			end
+			Window._activeTab = Tab
+			if prev ~= Tab and isFn(Tab._onSelect) then pcall(Tab._onSelect, Tab) end
+		end
+
+		-- callback เมื่อ tab ถูกเลือก: tab:OnSelect(function(tab) ... end)
+		function Tab:OnSelect(fn)
+			self._onSelect = fn
+			return self
+		end
+
+		-- ---- 3.6 theme + hover + click ----
 		OnTheme(function(t)
 			th = t
 			btn.BackgroundColor3 = t.Surface2
 			page.ScrollBarImageColor3 = t.Border
-			Paint(Tab == Window._activeTab)
+			crumb.TextColor3 = t.TextDim
+			ptitle.TextColor3 = t.Accent
+			Paint(Window._activeTab == Tab, t)
 		end)
-		function Tab:Select()
-			for _, o in ipairs(Window._tabs) do
-				local act = (o == Tab)
-				o._page.Visible = act
-				pcall(function() o._Paint(act) end)
-			end
-			Window._activeTab = Tab
-		end
 
-		-- ---- 3.4 event ----
+		Track(Tab, btn.MouseEnter:Connect(function()
+			if Window._activeTab ~= Tab then bs.Transparency = 0.1 end
+		end))
+		Track(Tab, btn.MouseLeave:Connect(function()
+			if Window._activeTab ~= Tab then bs.Transparency = 0.35 end
+		end))
 		Track(Tab, btn.MouseButton1Click:Connect(function()
 			SFX:Click()
 			Tab:Select()
@@ -3327,7 +3350,6 @@ function Library:CreateWindow(...)
 			return Section
 		end
 		Tab.AddSection, Tab.CreateSection, Tab.addsection = Tab.addSection, Tab.addSection, Tab.addSection
-		table.insert(Window._tabs, Tab)
 		AddChild(Window, Tab)
 		-- เลือก tab แรกอัตโนมัติ (S+: top-nav ไม่มีแยก Config แล้ว)
 		if tostring(name):lower() == "home" then
@@ -3484,7 +3506,6 @@ Library.CreateWindow, Library.createWindow, Library.NewWindow =
 pcall(function()
 	if getgenv then
 		getgenv().OxiasidianGUI = Library
-		getgenv().QuantumOnyxGUI = nil
 	end
 end)
 
