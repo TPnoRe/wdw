@@ -1328,7 +1328,7 @@ function Library:CreateWindow(...)
 		BackgroundColor3 = theme.Border, BorderSizePixel = 0 }, navBar)
 	local navScroll = New("ScrollingFrame", { Position = UDim2.new(0, 8, 0, 5),
 		Size = UDim2.new(1, -16, 0, 28), BackgroundTransparency = 1,
-		ScrollBarThickness = 0, ScrollingDirection = Enum.ScrollingDirection.X,
+		ScrollBarThickness = 3, ScrollBarImageColor3 = theme.Accent, ScrollingDirection = Enum.ScrollingDirection.X,
 		CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.X,
 		ScrollingEnabled = true }, navBar)
 	HList(navScroll, 6)
@@ -1733,6 +1733,7 @@ function Library:CreateWindow(...)
 			if getgenv then
 				getgenv().OxiasidianActive = nil
 				getgenv().OxiasidianGUI = nil
+				getgenv().QuantumOnyxGUI = nil
 			end
 		end)
 		local src = nil
@@ -1817,7 +1818,7 @@ function Library:CreateWindow(...)
 		local activeGrad = MechaGradient(btn, th.Accent, th.Accent2 or th.Accent, 0.45)
 		activeGrad.Enabled = false
 		-- เส้นใต้ tab ที่เลือก
-		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 3), Position = UDim2.new(0, 0, 1, -3),
+		local activeBar = New("Frame", { Size = UDim2.new(1, 0, 0, 4), Position = UDim2.new(0, 0, 1, -4),
 			BackgroundColor3 = th.AccentHover or th.Accent, BorderSizePixel = 0, Visible = false }, btn)
 
 		-- ---- 3.2 หน้า content ของ tab ----
@@ -1834,7 +1835,7 @@ function Library:CreateWindow(...)
 		local crumb = New("TextLabel", { Position = UDim2.new(0, 2, 0, 0), Size = UDim2.new(1, -4, 0, 11),
 			BackgroundTransparency = 1, Text = "OVERVIEW / " .. string.upper(name),
 			Font = Enum.Font.Gotham, TextSize = 9,
-			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = th.TextDim }, ph)
+			TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = th.TextMuted }, ph)
 		local ptitle = New("TextLabel", { Position = UDim2.new(0, 2, 0, 11), Size = UDim2.new(1, -4, 0, 19),
 			BackgroundTransparency = 1, Text = "▶ " .. string.upper(name),
 			Font = Enum.Font.GothamBlack, TextSize = 13,
@@ -1908,7 +1909,7 @@ function Library:CreateWindow(...)
 			th = t
 			btn.BackgroundColor3 = t.Surface2
 			page.ScrollBarImageColor3 = t.Border
-			crumb.TextColor3 = t.TextDim
+			crumb.TextColor3 = t.TextMuted
 			ptitle.TextColor3 = t.Accent
 			Paint(Window._activeTab == Tab, t)
 		end)
@@ -3506,6 +3507,7 @@ Library.CreateWindow, Library.createWindow, Library.NewWindow =
 pcall(function()
 	if getgenv then
 		getgenv().OxiasidianGUI = Library
+		getgenv().QuantumOnyxGUI = nil
 	end
 end)
 
