@@ -805,12 +805,13 @@ local ConfigSystem = {
 }
 
 function ConfigSystem:Path()
-	return "OxiasidianUI/Config/" .. self.File .. ".json"
+	local folder = (getgenv and getgenv().SCRIPT_CONFIG and getgenv().SCRIPT_CONFIG.ConfigFolder) or "KaChiniHub"
+	return folder .. "/Config/" .. self.File .. ".json"
 end
 
 function ConfigSystem:Init(fileName)
 	fileName = toStr(fileName or "Configs")
-	if fileName == "" or fileName == "OxiasidianConfig" then fileName = "Configs" end
+	if fileName == "" or fileName == "OxiasidianConfig" or fileName == "KaChiniConfig" then fileName = "Configs" end
 	self.File = fileName:gsub("[^%w%-%_]", "_")
 	self.Data = {}
 	self:AutoLoad()
@@ -819,15 +820,22 @@ end
 function ConfigSystem:AutoLoad()
 	local path = self:Path()
 	if not SafeIsFile(path) then
-		local cand1 = "OxiasidianUI/Config/Configs.json"
-		local cand2 = "OxiasidianUI/Config/Conifgs.json"
-		local cand3 = "OxiasidianUI/Config/BloxFruits.json"
-		local cand4 = "OxiasidianUI/Configs.json"
-		if SafeIsFile(cand1) then path = cand1
-		elseif SafeIsFile(cand2) then path = cand2
-		elseif SafeIsFile(cand3) then path = cand3
-		elseif SafeIsFile(cand4) then path = cand4 end
+		local cands = {
+			"KaChiniHub/Config/" .. self.File .. ".json",
+			"KaChiniHub/" .. self.File .. ".json",
+			"KaChiniHub/Config/Configs.json",
+			"KaChiniHub/Configs.json",
+			"OxiasidianUI/Config/" .. self.File .. ".json",
+			"OxiasidianUI/Config/Configs.json",
+			"OxiasidianUI/Config/Conifgs.json",
+			"OxiasidianUI/Config/BloxFruits.json",
+			"OxiasidianUI/Configs.json",
+		}
+		for _, c in ipairs(cands) do
+			if SafeIsFile(c) then path = c break end
+		end
 	end
+
 	if SafeIsFile(path) then
 		local content = SafeReadFile(path)
 		if isStr(content) and #content > 1 then
@@ -1529,7 +1537,12 @@ function Library:CreateWindow(...)
 		local matchCount = 0
 		for _, comp in ipairs(Window._children or {}) do
 			if comp and comp._row and comp._keywords then
-				if string.find(comp._keywords, q, 1, true) then
+				local kw = comp._keywords
+				local attrKey = comp._row:GetAttribute("SettingKey")
+				if attrKey then
+					kw = kw .. " " .. NormQuery(tostring(attrKey))
+				end
+				if string.find(kw, q, 1, true) then
 					pcall(function() comp._row.Visible = true end)
 					matchCount = matchCount + 1
 				else
@@ -1576,6 +1589,18 @@ function Library:CreateWindow(...)
 	Track(Window, searchInput:GetPropertyChangedSignal("Text"):Connect(function()
 		Window:ApplySearch(searchInput.Text)
 	end))
+
+	-- ============ S+ FEATURE: INIT NAVIGATION SEARCH ========================
+	function Window:InitNavigationSearch()
+		if searchInput then
+			pcall(function()
+				searchInput.Text = ""
+				Window:ApplySearch("")
+			end)
+		end
+		return searchInput
+	end
+
 
 	-- ============ S+ FEATURE 7: SHARE CODE (clipboard export/import) =========
 	function Window:ExportShareCode()
