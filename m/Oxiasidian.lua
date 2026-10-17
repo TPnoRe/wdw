@@ -1213,7 +1213,8 @@ function Library:CreateWindow(...)
 	if boundSettings then
 		PlayerConfig:BindSettings(boundSettings)
 	end
-	local defaultTheme = cfg.Theme or cfg.theme or ConfigSystem:Get("UITheme", "Purple")
+	local savedTheme = ConfigSystem:Get("UITheme", nil)
+	local defaultTheme = (savedTheme and savedTheme ~= "") and savedTheme or (cfg.Theme or cfg.theme or "Purple")
 	local theme = ThemeSystem.Resolve(defaultTheme)
 	local themeName = theme.Name
 	local onStopAll = cfg.OnStopAll or cfg.onStopAll
@@ -1241,7 +1242,7 @@ function Library:CreateWindow(...)
 	MechaCorner(main)
 	local mainStroke = Stroke(main, theme.BorderGlow or theme.Accent, 2)
 	-- เส้น accent บนขอบ (แบบ preview top highlight)
-	New("Frame", { Size = UDim2.new(1, -32, 0, 2), Position = UDim2.new(0, 16, 0, 0),
+	local mainTopAccent = New("Frame", { Size = UDim2.new(1, -32, 0, 2), Position = UDim2.new(0, 16, 0, 0),
 		BackgroundColor3 = theme.Accent, BorderSizePixel = 0 }, main)
 	-- (FitScale viewport listener ถูกย้ายไปหลัง Window เกิดแล้วด้านล่าง)
 
@@ -1289,7 +1290,7 @@ function Library:CreateWindow(...)
 			})
 		end)
 	end
-	New("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2),
+	local headerBottomLine = New("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2),
 		BackgroundColor3 = theme.Border, BorderSizePixel = 0 }, header)
 	-- radar-beacon ข้าวหลามตัด 12px
 	local beaconWrap = New("Frame", { Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 12, 0.5, -7),
@@ -1306,20 +1307,22 @@ function Library:CreateWindow(...)
 	local searchBox = New("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -110, 0.5, 0),
 		Size = UDim2.new(0, 118, 0, 24), BackgroundColor3 = theme.Surface3, BorderSizePixel = 0 }, header)
 	MechaCorner(searchBox)
-	Stroke(searchBox, theme.Border, 1)
-	New("TextLabel", { Position = UDim2.new(0, 5, 0, 0), Size = UDim2.new(0, 14, 1, 0),
+	local searchBoxStroke = Stroke(searchBox, theme.Border, 1)
+	local searchPrefix = New("TextLabel", { Position = UDim2.new(0, 5, 0, 0), Size = UDim2.new(0, 14, 1, 0),
 		BackgroundTransparency = 1, Text = ">", Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = theme.Accent }, searchBox)
 	local searchInput = New("TextBox", { Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -22, 1, 0),
 		BackgroundTransparency = 1, Text = "", PlaceholderText = "Filter...",
 		Font = Enum.Font.Code, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = theme.Accent, PlaceholderColor3 = theme.TextDim, ClearTextOnFocus = false }, searchBox)
+	local _headerButtons = {}
 	local function HBtn(txt, x)
 		local b = New("TextButton", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, x, 0.5, 0),
 			Size = UDim2.new(0, 28, 0, 24), BackgroundColor3 = theme.Surface2, Text = txt,
 			Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = theme.Text }, header)
 		MechaCorner(b)
-		Stroke(b, theme.Border, 1)
+		local bs = Stroke(b, theme.Border, 1)
+		table.insert(_headerButtons, { btn = b, stroke = bs })
 		return b
 	end
 	local minBtn = HBtn("-", -40)
@@ -1332,7 +1335,7 @@ function Library:CreateWindow(...)
 	-- top nav bar (swipeable)
 	local navBar = New("Frame", { Size = UDim2.new(1, 0, 0, 38),
 		BackgroundColor3 = theme.Surface3, BorderSizePixel = 0, ClipsDescendants = true }, body)
-	New("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2),
+	local navBarBottomLine = New("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2),
 		BackgroundColor3 = theme.Border, BorderSizePixel = 0 }, navBar)
 	local navScroll = New("ScrollingFrame", { Position = UDim2.new(0, 8, 0, 5),
 		Size = UDim2.new(1, -16, 0, 28), BackgroundTransparency = 1,
@@ -1349,12 +1352,12 @@ function Library:CreateWindow(...)
 		Size = UDim2.new(1, -16, 1, -82), BackgroundColor3 = theme.Surface, BorderSizePixel = 0,
 		ClipsDescendants = true }, body)
 	MechaCorner(contentWrap)
-	Stroke(contentWrap, theme.BorderSoft, 1)
+	local contentWrapStroke = Stroke(contentWrap, theme.BorderSoft or theme.Border, 1)
 
 	-- footer 28px แบบ preview .terminal-footer
 	local footer = New("Frame", { Position = UDim2.new(0, 0, 1, -28), Size = UDim2.new(1, 0, 0, 28),
 		BackgroundColor3 = theme.Surface3, BorderSizePixel = 0 }, body)
-	New("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 0),
+	local footerTopLine = New("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 0),
 		BackgroundColor3 = theme.Border, BorderSizePixel = 0 }, footer)
 	local footStatus = New("TextLabel", { Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(0.6, -12, 1, 0),
 		BackgroundTransparency = 1, Text = "[ALL S+ FEATURES READY]", Font = Enum.Font.GothamBold, TextSize = 9,
@@ -1371,7 +1374,7 @@ function Library:CreateWindow(...)
 		Position = UDim2.new(0, 10, 0.5, 0), Size = UDim2.new(0, 50, 0, 50),
 		BackgroundColor3 = theme.Surface3, Text = "", Visible = false, Rotation = 45 }, gui)
 	MechaCorner(floatBtn)
-	Stroke(floatBtn, theme.Accent, 2)
+	local floatBtnStroke = Stroke(floatBtn, theme.Accent, 2)
 	local floatGlyph = New("TextLabel", { Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1, Text = "❖", Font = Enum.Font.GothamBlack,
 		TextSize = 18, TextColor3 = theme.Accent, Rotation = -45 }, floatBtn)
@@ -1396,16 +1399,33 @@ function Library:CreateWindow(...)
 	OnTheme(function(t)
 		brandDot.BackgroundColor3 = t.Accent
 		mainStroke.Color = t.BorderGlow or t.Accent
+		mainTopAccent.BackgroundColor3 = t.Accent
 		header.BackgroundColor3 = t.Surface
+		headerBottomLine.BackgroundColor3 = t.Border
 		navBar.BackgroundColor3 = t.Surface3
+		navBarBottomLine.BackgroundColor3 = t.Border
+		navScroll.ScrollBarImageColor3 = t.Accent
 		contentWrap.BackgroundColor3 = t.Surface
+		contentWrapStroke.Color = t.BorderSoft or t.Border
 		footer.BackgroundColor3 = t.Surface3
+		footerTopLine.BackgroundColor3 = t.Border
 		footStatus.TextColor3 = t.Accent
 		footRight.TextColor3 = t.TextDim
 		searchBox.BackgroundColor3 = t.Surface3
+		searchBoxStroke.Color = t.Border
+		searchPrefix.TextColor3 = t.Accent
 		searchInput.TextColor3 = t.Accent
+		searchInput.PlaceholderColor3 = t.TextDim
 		floatBtn.BackgroundColor3 = t.Surface3
+		floatBtnStroke.Color = t.Accent
 		floatGlyph.TextColor3 = t.Accent
+		for _, hb in ipairs(_headerButtons) do
+			pcall(function()
+				hb.btn.BackgroundColor3 = t.Surface2
+				hb.btn.TextColor3 = t.Text
+				hb.stroke.Color = t.Border
+			end)
+		end
 		for _, b in ipairs(_brackets) do pcall(function() b.BackgroundColor3 = t.Accent end) end
 	end)
 	-- FitScale + viewport listener (ต้องหลัง Window เกิดแล้ว)
@@ -1828,15 +1848,15 @@ function Library:CreateWindow(...)
 
 		local th = Window._theme
 		local tabIdx = #Window._tabs + 1
-		local tabLabel = string.format("[%02d %s]", tabIdx, string.upper(name))
+		local tabLabel = string.upper(name)
 
 		-- ---- 3.1 ปุ่ม tab บน top-nav ----
 		-- ข้อความอยู่บนปุ่มโดยตรง (ไม่ซ้อน TextLabel) เพื่อให้ AutomaticSize.X วัดความกว้างถูก
 		-- คำนวณความกว้างจากข้อความจริง (GothamBlack คือตัวที่กว้างสุด) เพื่อไม่ให้ชื่อโดนตัดเป็น "..."
 		local okW, textW = pcall(function()
 			return game:GetService("TextService"):GetTextSize(tabLabel, 11, Enum.Font.GothamBlack, Vector2.new(10000, 28)).X
-		 end)
-		local btnW = (okW and textW or 120) + 30
+		end)
+		local btnW = (okW and textW or 100) + 26
 		-- Settings ไม่อยู่บนแถบ tab แล้ว แต่เป็นปุ่มรูปเฟืองข้างปุ่ม "-" บน header
 		local isGear = (string.lower(name) == "settings") and Window._header ~= nil
 		local btn = New("TextButton", { Name = "Tab_" .. name,
@@ -1844,18 +1864,20 @@ function Library:CreateWindow(...)
 			Position = isGear and UDim2.new(1, -74, 0.5, 0) or UDim2.new(0, 0, 0, 0),
 			Size = isGear and UDim2.new(0, 28, 0, 24) or UDim2.new(0, btnW, 0, 28),
 			BackgroundColor3 = th.Surface2, BackgroundTransparency = 0.3,
-			Text = isGear and "" or tabLabel, Font = Enum.Font.GothamBold, TextSize = 11,
+			Text = isGear and "⚙" or tabLabel, Font = Enum.Font.GothamBold, TextSize = isGear and 13 or 11,
 			TextColor3 = th.TextMuted, TextTruncate = Enum.TextTruncate.None,
 			AutoButtonColor = false, LayoutOrder = tabIdx }, isGear and Window._header or Window._navScroll)
 		local icon = nil
 		if isGear then
 			icon = New("ImageLabel", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
-				Size = UDim2.new(0, 14, 0, 14), BackgroundTransparency = 1,
-				Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsIcon.png",
+				Size = UDim2.new(0, 16, 0, 16), BackgroundTransparency = 1,
+				Image = "rbxassetid://6031097229",
 				ImageColor3 = th.TextMuted }, btn)
 		end
 		MechaCorner(btn)
-		Pad(btn, 0, 14, 0, 14)
+		if not isGear then
+			Pad(btn, 0, 14, 0, 14)
+		end
 		local bs = Stroke(btn, th.Accent, 1, 0.35)
 		-- พื้น gradient เฉพาะตอน active
 		-- เส้นใต้ tab ที่เลือก
@@ -1885,7 +1907,7 @@ function Library:CreateWindow(...)
 
 		-- ---- 3.3 object ----
 		local Tab = { _window = Window, _button = btn, _page = page, _sections = {},
-			_conns = {}, _children = {}, Name = name, Icon = iconId, _isConfig = false }
+			_conns = {}, _children = {}, Name = name, Icon = iconId, _isConfig = false, _isGear = isGear }
 		table.insert(Window._tabs, Tab) -- ลงทะเบียนทันที เพื่อให้ index และการเช็คชื่อซ้ำถูกต้อง
 
 		-- ---- 3.4 ระบายสีตามสถานะ active / inactive ----
@@ -1923,6 +1945,9 @@ function Library:CreateWindow(...)
 		-- ---- 3.5 การเลือก tab ----
 		function Tab:Select()
 			local prev = Window._activeTab
+			if not isGear then
+				Window._lastContentTab = Tab
+			end
 			for _, o in ipairs(Window._tabs) do
 				local act = (o == Tab)
 				o._page.Visible = act
@@ -1956,6 +1981,13 @@ function Library:CreateWindow(...)
 		end))
 		Track(Tab, btn.MouseButton1Click:Connect(function()
 			SFX:Click()
+			if isGear and Window._activeTab == Tab then
+				local prevTab = Window._lastContentTab or Window._tabs[1]
+				if prevTab and prevTab ~= Tab then
+					prevTab:Select()
+					return
+				end
+			end
 			Tab:Select()
 		end))
 
@@ -1971,12 +2003,16 @@ function Library:CreateWindow(...)
 			List(holder2, 7)
 			if secTitle then
 				local h = New("Frame", { Size = UDim2.new(1, 0, 0, 20), BackgroundTransparency = 1 }, holder2)
-				New("Frame", { Size = UDim2.new(0, 12, 0, 2), Position = UDim2.new(0, 0, 0.5, -1),
+				local secAccentBar = New("Frame", { Size = UDim2.new(0, 12, 0, 2), Position = UDim2.new(0, 0, 0.5, -1),
 					BackgroundColor3 = Window._theme.Accent, BorderSizePixel = 0 }, h)
-				New("TextLabel", { Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -18, 1, 0),
+				local secTextLbl = New("TextLabel", { Position = UDim2.new(0, 18, 0, 0), Size = UDim2.new(1, -18, 1, 0),
 					BackgroundTransparency = 1, Text = string.upper(toStr(secTitle)),
 					Font = Enum.Font.GothamBold, TextSize = 10,
 					TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Window._theme.TextMuted }, h)
+				OnTheme(function(t)
+					secAccentBar.BackgroundColor3 = t.Accent
+					secTextLbl.TextColor3 = t.TextMuted
+				end)
 			end
 			local Section = { _tab = Tab, _holder = holder2, _menus = {}, _conns = {}, _children = {}, Title = secTitle or "" }
 			function Section:addMenu(...)
@@ -2001,13 +2037,14 @@ function Library:CreateWindow(...)
 					BackgroundTransparency = 1, Text = "▶ " .. string.upper(mName), Font = Enum.Font.GothamBlack, TextSize = 10,
 					TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
 					TextColor3 = Window._theme.Accent }, mh)
-				New("Frame", { Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = Window._theme.Border,
+				local divLine = New("Frame", { Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = Window._theme.Border,
 					BorderSizePixel = 0, BackgroundTransparency = 0.1, LayoutOrder = 1 }, box)
 				OnTheme(function(t)
 					box.BackgroundColor3 = t.Surface
 					mStroke.Color = t.Border
 					mt.TextColor3 = t.Accent
 					mtick.BackgroundColor3 = t.Accent
+					divLine.BackgroundColor3 = t.Border
 				end)
 				local Menu = { _section = Section, _window = Window, _box = box,
 					_order = 2, _conns = {}, _children = {}, Name = mName,
@@ -2073,7 +2110,7 @@ function Library:CreateWindow(...)
 						swStroke.Color = comp._value and t.Accent or t.Border
 						if subLbl then subLbl.TextColor3 = t.TextMuted end
 						if comp._value then
-							sw.BackgroundColor3 = square and t.Accent or Color3.fromRGB(9, 30, 18)
+							sw.BackgroundColor3 = square and t.Accent or (t.AccentDark or t.Accent)
 							if not square and knob then knob.BackgroundColor3 = t.Accent end
 						else
 							sw.BackgroundColor3 = t.Surface3
@@ -2082,27 +2119,29 @@ function Library:CreateWindow(...)
 					end)
 					local function Paint(anim)
 						local on = comp._value
+						local th = Window._theme
 						-- preview active: bg accent 25% + border accent + glow
-						local bg = on and Window._theme.Accent or Window._theme.Surface3
+						local bg = on and th.Accent or th.Surface3
+						local activeBg = th.AccentDark or th.Accent
 						if square then
 							if anim then Tween(sw, { BackgroundColor3 = bg }) else sw.BackgroundColor3 = bg end
 							knob.Visible = on
-							swStroke.Color = on and Window._theme.Accent or Window._theme.Border
+							swStroke.Color = on and th.Accent or th.Border
 						else
 							local pos = on and UDim2.new(1, -17, 0.5, -6.5) or UDim2.new(0, 4, 0.5, -6.5)
-							local kc = on and Window._theme.Accent or Window._theme.TextDim
-							swStroke.Color = on and Window._theme.Accent or Window._theme.Border
+							local kc = on and th.Accent or th.TextDim
+							swStroke.Color = on and th.Accent or th.Border
 							if anim then
-								Tween(sw, { BackgroundColor3 = on and Color3.fromRGB(9, 30, 18) or Window._theme.Surface3 })
+								Tween(sw, { BackgroundColor3 = on and activeBg or th.Surface3 })
 								Tween(knob, { Position = pos, BackgroundColor3 = kc })
 							else
-								sw.BackgroundColor3 = on and Color3.fromRGB(9, 30, 18) or Window._theme.Surface3
+								sw.BackgroundColor3 = on and activeBg or th.Surface3
 								knob.Position, knob.BackgroundColor3 = pos, kc
 							end
 							-- glow เลียนแบบ box-shadow: หนา stroke ตอน on
 							swStroke.Thickness = on and 2 or 1
 						end
-						if comp._locked then tl.TextColor3 = Window._theme.TextDim end
+						if comp._locked then tl.TextColor3 = th.TextDim end
 					end
 					Paint(false)
 					local function Apply(v, fire)
@@ -2283,8 +2322,18 @@ function Library:CreateWindow(...)
 					OnTheme(function(t)
 						for _, d in ipairs(wrap:GetDescendants()) do
 							if d:IsA("TextButton") then
-								d.BackgroundColor3 = t.Surface
+								d.BackgroundColor3 = t.Surface2
+							elseif d:IsA("TextLabel") then
 								d.TextColor3 = t.Text
+							elseif d:IsA("UIStroke") then
+								d.Color = t.Accent
+							elseif d:IsA("UIGradient") then
+								pcall(function()
+									d.Color = ColorSequence.new({
+										ColorSequenceKeypoint.new(0, t.Accent),
+										ColorSequenceKeypoint.new(1, t.Accent2 or t.Accent),
+									})
+								end)
 							end
 						end
 					end)
@@ -2342,7 +2391,7 @@ function Library:CreateWindow(...)
 					local track = New("Frame", { Position = UDim2.new(0, 0, 0.5, -3), Size = UDim2.new(1, 0, 0, 8),
 						BackgroundColor3 = Window._theme.Surface3, BorderSizePixel = 0, Active = false }, bar)
 					MechaCorner(track)
-					Stroke(track, Window._theme.Border, 1)
+					local trackStroke = Stroke(track, Window._theme.Border, 1)
 					local fill = New("Frame", { Size = UDim2.new(0, 0, 1, 0),
 						BackgroundColor3 = Window._theme.Accent, BorderSizePixel = 0, Active = false }, track)
 					MechaCorner(fill)
@@ -2362,6 +2411,7 @@ function Library:CreateWindow(...)
 						val.TextColor3 = comp._locked and t.TextDim or t.Accent
 						valStroke.Color = t.Accent
 						track.BackgroundColor3 = t.Surface3
+						trackStroke.Color = t.Border
 						fill.BackgroundColor3 = t.Accent
 						dot.BackgroundColor3 = t.Accent
 					end)
@@ -2644,7 +2694,7 @@ function Library:CreateWindow(...)
 						BackgroundColor3 = Window._theme.Surface, BorderSizePixel = 0,
 						ClipsDescendants = true }, row)
 					MechaCorner(popup)
-					Stroke(popup, Window._theme.Border, 1)
+					local popupStroke = Stroke(popup, Window._theme.Border, 1)
 					Pad(popup, 4, 5, 4, 5)
 					-- แถว ALL / CLEAR สำหรับ multi (preview .dd-actions) — ซ่อนถ้า single
 					local actBar = New("Frame", { Size = UDim2.new(1, 0, 0, 22), BackgroundTransparency = 1,
@@ -2654,27 +2704,25 @@ function Library:CreateWindow(...)
 						BackgroundColor3 = Window._theme.Surface3, Text = "",
 						AutoButtonColor = false }, actBar)
 					MechaCorner(allBtn)
-					Stroke(allBtn, Window._theme.Border, 1)
-					New("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+					local allBtnStroke = Stroke(allBtn, Window._theme.Border, 1)
+					local allBtnLbl = New("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
 						Text = "[ALL]", Font = Enum.Font.GothamBlack, TextSize = 10,
 						TextColor3 = Window._theme.TextMuted }, allBtn)
 					local clearBtn = New("TextButton", { Size = UDim2.new(0.5, -2, 0, 22),
 						BackgroundColor3 = Window._theme.Surface3, Text = "",
 						AutoButtonColor = false }, actBar)
 					MechaCorner(clearBtn)
-					Stroke(clearBtn, Window._theme.Border, 1)
-					New("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+					local clearBtnStroke = Stroke(clearBtn, Window._theme.Border, 1)
+					local clearBtnLbl = New("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
 						Text = "[CLEAR]", Font = Enum.Font.GothamBlack, TextSize = 10,
 						TextColor3 = Window._theme.TextMuted }, clearBtn)
-					MechaCorner(clearBtn)
-					Stroke(clearBtn, Window._theme.Border, 1)
 					local search = New("TextBox", { Size = UDim2.new(1, 0, 0, 24),
 						BackgroundColor3 = Window._theme.Surface3, PlaceholderText = "Filter options...",
 						Text = "", Font = Enum.Font.Code, TextSize = 10,
 						TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Window._theme.Accent,
 						PlaceholderColor3 = Window._theme.TextDim, ClearTextOnFocus = false }, popup)
 					MechaCorner(search)
-					Stroke(search, Window._theme.Border, 1)
+					local searchStroke = Stroke(search, Window._theme.Border, 1)
 					Pad(search, 0, 8, 0, 8)
 					local scr = New("ScrollingFrame", { Position = UDim2.new(0, 0, 0, 0),
 						Size = UDim2.new(1, 0, 1, -30), BackgroundTransparency = 1,
@@ -2714,10 +2762,25 @@ function Library:CreateWindow(...)
 						sel.BackgroundColor3 = t.Surface3
 						selStroke.Color = t.Border
 						popup.BackgroundColor3 = t.Surface
+						popupStroke.Color = t.Border
+						allBtn.BackgroundColor3 = t.Surface3
+						allBtnStroke.Color = t.Border
+						allBtnLbl.TextColor3 = t.TextMuted
+						clearBtn.BackgroundColor3 = t.Surface3
+						clearBtnStroke.Color = t.Border
+						clearBtnLbl.TextColor3 = t.TextMuted
 						search.BackgroundColor3 = t.Surface3
+						searchStroke.Color = t.Border
 						search.TextColor3 = t.Accent
+						search.PlaceholderColor3 = t.TextDim
 						st.TextColor3 = t.Accent
 						chev.TextColor3 = t.TextDim
+						scr.ScrollBarImageColor3 = t.Border
+						for _, b in pairs(comp._pool or {}) do
+							pcall(function()
+								b.BackgroundColor3 = t.Surface2
+							end)
+						end
 					end)
 					local function DispText()
 						if multi then
@@ -2952,7 +3015,7 @@ function Library:CreateWindow(...)
 					local row = New("Frame", { Size = UDim2.new(1, 0, 0, 50),
 						BackgroundColor3 = Window._theme.Surface2, BorderSizePixel = 0, LayoutOrder = NextOrder() }, box)
 					MechaCorner(row)
-					Stroke(row, Window._theme.Border, 1)
+					local rowStroke = Stroke(row, Window._theme.Border, 1)
 					New("TextLabel", { Position = UDim2.new(0, 10, 0, 3), Size = UDim2.new(1, -20, 0, 14),
 						BackgroundTransparency = 1, Text = "// " .. string.upper(label), Font = Enum.Font.GothamBold, TextSize = 10,
 						TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
@@ -2964,15 +3027,18 @@ function Library:CreateWindow(...)
 						TextColor3 = Window._theme.Accent, PlaceholderColor3 = Window._theme.TextDim,
 						ClearTextOnFocus = false }, row)
 					MechaCorner(tb)
-					Stroke(tb, Window._theme.Border, 1)
+					local tbStroke = Stroke(tb, Window._theme.Border, 1)
 					Pad(tb, 0, 8, 0, 8)
 					local comp = { _window = Window, _row = row, _box = tb, _value = def,
 						_callback = cb, _saveKey = saveKey, _conns = {}, Type = "Textbox",
 						_keywords = NormQuery(label .. " " .. toStr(confirmText or "") .. " textbox import code") }
 					OnTheme(function(t)
 						row.BackgroundColor3 = t.Surface2
+						rowStroke.Color = t.Border
 						tb.BackgroundColor3 = t.Surface3
+						tbStroke.Color = t.Border
 						tb.TextColor3 = t.Accent
+						tb.PlaceholderColor3 = t.TextDim
 					end)
 					local function Apply(v, fire)
 						comp._value = toStr(v or "")
@@ -3018,7 +3084,7 @@ function Library:CreateWindow(...)
 					local row = New("Frame", { Size = UDim2.new(1, 0, 0, h),
 						BackgroundColor3 = Window._theme.Surface2, BorderSizePixel = 0, LayoutOrder = NextOrder() }, box)
 					MechaCorner(row)
-					Stroke(row, Window._theme.Border, 1)
+					local rowStroke = Stroke(row, Window._theme.Border, 1)
 					local t1 = New("TextLabel", { Position = UDim2.new(0, 10, 0, 3), Size = UDim2.new(1, -20, 0, 14),
 						BackgroundTransparency = 1, Text = titleT, Font = Enum.Font.GothamBold, TextSize = 11,
 						TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
@@ -3029,6 +3095,7 @@ function Library:CreateWindow(...)
 						TextColor3 = Window._theme.TextMuted, Visible = (descT ~= "") }, row)
 					OnTheme(function(t)
 						row.BackgroundColor3 = t.Surface2
+						rowStroke.Color = t.Border
 						t1.TextColor3 = t.Accent
 						t2.TextColor3 = t.TextMuted
 					end)
@@ -3082,7 +3149,7 @@ function Library:CreateWindow(...)
 					local row = New("Frame", { Size = UDim2.new(1, 0, 0, 38),
 						BackgroundColor3 = Window._theme.Surface2, BorderSizePixel = 0, LayoutOrder = NextOrder() }, box)
 					MechaCorner(row)
-					Stroke(row, Window._theme.Border, 1)
+					local rowStroke = Stroke(row, Window._theme.Border, 1)
 					New("TextLabel", { Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -90, 1, 0),
 						BackgroundTransparency = 1, Text = "// " .. string.upper(label), Font = Enum.Font.GothamBold, TextSize = 10,
 						TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
@@ -3092,13 +3159,20 @@ function Library:CreateWindow(...)
 						BackgroundColor3 = Window._theme.Surface3, Text = "",
 						AutoButtonColor = false }, row)
 					MechaCorner(keyBtn)
-					Stroke(keyBtn, Window._theme.Accent, 1)
+					local keyBtnStroke = Stroke(keyBtn, Window._theme.Accent, 1)
 					local keyLbl = New("TextLabel", { Size = UDim2.new(1, 0, 1, 0),
 						BackgroundTransparency = 1, Text = "[" .. toStr(def) .. "]",
 						Font = Enum.Font.Code, TextSize = 10, TextColor3 = Window._theme.Accent }, keyBtn)
 					local comp = { _window = Window, _row = row, _value = toStr(def), _callback = cb,
 						_saveKey = saveKey, _conns = {}, _binding = false, Type = "Keybind",
 						_keywords = NormQuery(label .. " keybind hotkey") }
+					OnTheme(function(t)
+						row.BackgroundColor3 = t.Surface2
+						rowStroke.Color = t.Border
+						keyBtn.BackgroundColor3 = t.Surface3
+						keyBtnStroke.Color = t.Accent
+						keyLbl.TextColor3 = t.Accent
+					end)
 					local function SetKey(name, fire)
 						comp._value = toStr(name)
 						keyLbl.Text = "[" .. comp._value .. "]"
@@ -3159,7 +3233,7 @@ function Library:CreateWindow(...)
 					local row = New("Frame", { Size = UDim2.new(1, 0, 0, 38),
 						BackgroundColor3 = Window._theme.Surface2, BorderSizePixel = 0, LayoutOrder = NextOrder() }, box)
 					MechaCorner(row)
-					Stroke(row, Window._theme.Border, 1)
+					local rowStroke = Stroke(row, Window._theme.Border, 1)
 					New("TextLabel", { Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(1, -70, 1, 0),
 						BackgroundTransparency = 1, Text = "// " .. string.upper(label), Font = Enum.Font.GothamBold, TextSize = 10,
 						TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
@@ -3168,7 +3242,7 @@ function Library:CreateWindow(...)
 						Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 48, 0, 22),
 						BackgroundColor3 = def, Text = "" }, row)
 					MechaCorner(prev)
-					Stroke(prev, Window._theme.Border, 1)
+					local prevStroke = Stroke(prev, Window._theme.Border, 1)
 				local comp = { _window = Window, _row = row, _value = def, _callback = cb,
 					_locked = locked, _saveKey = saveKey, _conns = {}, _open = false, Type = "Colorpicker",
 					_keywords = NormQuery(label .. " color picker") }
@@ -3181,6 +3255,13 @@ function Library:CreateWindow(...)
 					ClipsDescendants = true }, row)
 				Corner(panel, 5)
 				local panelStroke = Stroke(panel, Window._theme.Border, 1)
+				OnTheme(function(t)
+					row.BackgroundColor3 = t.Surface2
+					rowStroke.Color = t.Border
+					prevStroke.Color = t.Border
+					panel.BackgroundColor3 = t.Surface
+					panelStroke.Color = t.Border
+				end)
 				Pad(panel, 5, 6, 5, 6)
 				local svBox, svDot, hueBar, hueDot, hex, okBtn
 				local function CurColor() return Color3.fromHSV(h, s, v) end
